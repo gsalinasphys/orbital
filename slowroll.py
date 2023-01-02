@@ -2,7 +2,6 @@ import json
 import pickle
 import sys
 from itertools import combinations_with_replacement, product
-from math import cos, pi, sin
 from typing import Callable, List
 
 import numpy as np
@@ -179,8 +178,8 @@ if __name__ == '__main__':
     initial = np.concatenate((phi0, phidot0))
     Nrange = (0, 200, 10_000)
     back = get_background(initial, params, Nrange)
-
     Nini, Nend = back[0, 0], back[-1, 0]
+
     Hs = get_Hs(back, params)
     H_func = get_H_func(back, params)
 
