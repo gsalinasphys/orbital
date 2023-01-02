@@ -6,6 +6,7 @@ from typing import Callable, List
 
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.integrate import quad
 from scipy.misc import derivative
 from sympy.utilities import lambdify
 
@@ -169,6 +170,34 @@ def get_eta_parallel_perp_func(back: np.ndarray, params: dict) -> np.ndarray:
 
     return lambda N: dotG(G(N), eta(N), eplls(N)), lambda N: dotG(G(N), eta(N), eperps(N))
 
+def get_mass_matrix_func(params: dict) -> Callable:
+    pval = np.array(list(params.values()))
+
+    return lambda phi: PyT.ddV(phi, pval) / PyT.V(phi, pval) - np.outer(PyT.dV(phi, pval), PyT.dV(phi, pval)) / PyT.V(phi, pval)**2
+
+def get_mass_matrices(back: np.ndarray, params: dict) -> np.ndarray:
+    nF = PyT.nF()
+    phis = back[:, 1:nF+1]
+
+    return [get_mass_matrix_func(params)(phi) for phi in phis]
+
+def _beta(back: np.ndarray, params: dict) -> Callable:
+    pval = np.array(list(params.values()))
+    phix, phiy, phidotx, phidoty = get_background_func(back)
+    phi = lambda N: np.array([phix(N), phiy(N)])
+    phiphidot = lambda N: np.array([phix(N), phiy(N), phidotx(N), phidoty(N)])
+    eplls, eperps = get_kin_basis_func(back, params)
+    epsilon = get_epsilon_func(back, params)
+    _, etaperp = get_eta_parallel_perp_func(back, params)
+
+    return lambda N: -2*epsilon(N) - eperps(N) @ PyT.ddV(phi(N), pval) @ eperps(N) / PyT.V(phi(N), pval) + \
+        eplls(N) @ PyT.ddV(phi(N), pval) @ eplls(N) / PyT.V(phi(N), pval) - 2*etaperp(N)/(3*epsilon(N)*PyT.H(phiphidot(N), pval))
+
+
+def TSS(back: np.ndarray, params: dict, Nexit: float) -> Callable:
+    return lambda N: quad(_beta(back, params), Nexit, N)
+
+
 if __name__ == '__main__':
     nF, nP = PyT.nF(), PyT.nP()
     with open("./output/setup/params.json", "r") as file:
@@ -178,7 +207,9 @@ if __name__ == '__main__':
     initial = np.concatenate((phi0, phidot0))
     Nrange = (0, 200, 10_000)
     back = get_background(initial, params, Nrange)
+
     Nini, Nend = back[0, 0], back[-1, 0]
+    Nexit = Nend - 55
 
     Hs = get_Hs(back, params)
     H_func = get_H_func(back, params)
@@ -267,4 +298,16 @@ if __name__ == '__main__':
     plt.yscale('log')
     plt.tight_layout()
     plt.savefig("./output/background/omegas.png")
+    plt.clf()
+
+    Nafter = np.linspace(Nexit, Nend, num_points)
+    TSSa = [TSS(back, params, Nexit)(N) for N in Nafter]
+    plt.plot(Nplot, TSSa, c='k')
+    plt.xlim([Nexit, Nafter[-1]])
+    plt.title(r'$T_{SS}$ evolution',fontsize=16);
+    plt.ylabel(r'$T_{SS}$', fontsize=20) 
+    plt.xlabel(r'$N$', fontsize=20)
+    plt.yscale('log')
+    plt.tight_layout()
+    plt.savefig("./output/2pt/TSS.png")
     plt.clf()
