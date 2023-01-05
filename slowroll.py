@@ -4,10 +4,10 @@ import sys
 from itertools import combinations_with_replacement, product
 from typing import Callable, List
 
+import numdifftools as nd
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import quad
-from scipy.misc import derivative
 from sympy.utilities import lambdify
 
 from background import get_background, get_background_func
@@ -27,13 +27,13 @@ def get_H(phix: Callable, phiy: Callable, phidotx: Callable, phidoty: Callable, 
     return lambda N: PyT.H(np.array((phix(N),phiy(N), phidotx(N), phidoty(N))), pval)
 
 def get_epsilon(H: Callable) -> Callable:
-    return lambda N: -derivative(H, N, dx=1e-6) / H(N)
+    return lambda N: -nd.Derivative(H)(N) / H(N)
 
 def get_phiprime(phidotx: Callable, phidoty: Callable, H: Callable) -> Callable:
     return lambda N: np.array([phidotx(N), phidoty(N)]) / H(N)
 
 def get_phidoubleprime(phiprime: Callable) -> Callable:
-    return lambda N: derivative(phiprime, N, dx=1e-6)
+    return nd.Derivative(phiprime)
 
 def get_metric_sympy():
     with open("./output/setup/G.txt", "rb") as file:
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     num_points = 500
     Nplot = np.linspace(Nini, Nend, num_points)
-    plt.plot(Nplot, [H(_) for _ in Nplot], c="k", linewidth=1, linestyle='--')
+    plt.plot(Nplot, [H(_) for _ in Nplot], c="k", linewidth=1)
     plt.title('Hubble parameter')
     plt.xlabel(r'$N$', fontsize=16)
     plt.ylabel(r'$H$', fontsize=16)
@@ -157,16 +157,16 @@ if __name__ == '__main__':
     plt.savefig("./output/background/etaperps.png")
     plt.clf()
 
-    beta = _beta(phix, phiy, phidotx, phidoty, epsilon, epll1, eperp1, etaperp, pval)
-    TSSf = TSS(beta, Nexit)
+    # beta = _beta(phix, phiy, phidotx, phidoty, epsilon, epll1, eperp1, etaperp, pval)
+    # TSSf = TSS(beta, Nexit)
 
-    Nafter = np.linspace(Nexit, Nend, 10)
-    plt.plot(Nafter, [TSSf(N)[0] for N in Nafter], c='k')
-    plt.xlim([Nexit, Nafter[-1]])
-    plt.title(r'$T_{SS}$ evolution',fontsize=16);
-    plt.ylabel(r'$T_{SS}$', fontsize=20) 
-    plt.xlabel(r'$N$', fontsize=20)
-    plt.yscale('log')
-    plt.tight_layout()
-    plt.savefig("./output/2pt/TSS.png")
-    plt.clf()
+    # Nafter = np.linspace(Nexit, Nend, 10)
+    # plt.plot(Nafter, [TSSf(N)[0] for N in Nafter], c='k')
+    # plt.xlim([Nexit, Nafter[-1]])
+    # plt.title(r'$T_{SS}$ evolution',fontsize=16);
+    # plt.ylabel(r'$T_{SS}$', fontsize=20) 
+    # plt.xlabel(r'$N$', fontsize=20)
+    # plt.yscale('log')
+    # plt.tight_layout()
+    # plt.savefig("./output/2pt/TSS.png")
+    # plt.clf()
