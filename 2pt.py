@@ -115,10 +115,10 @@ if __name__ == '__main__':
     plt.clf()
 
     PR, CRS, PS = get_PR_PS_CRS(back, params, efolds_before)
-    print(f'Power spectrum at the end of inflation: {Pzeta(Nsig[-1]):.3}')
-
-    print(f'Power spectrum at horizon crossing: {Pzeta(Nexit):.3}')
-    print(f'Power spectrum at horizon crossing 2: {PR(Nexit):.3}')
+    print(f'Power spectrum at the end of inflation: {Pzeta(Nsig[-100]):.3}')
+    print(f'Power spectrum at horizon crossing: {PR(Nexit):.3}')
+    print(f'CRS at horizon crossing: {CRS(Nexit):.3}')
+    print(f'PS at horizon crossing: {PS(Nexit):.3}')
 
     plt.plot(Nplot, [PR(_) for _ in Nplot], c='k')
     plt.plot(Nplot, [Pzeta(_) for _ in Nplot], c='b', linestyle='--')
